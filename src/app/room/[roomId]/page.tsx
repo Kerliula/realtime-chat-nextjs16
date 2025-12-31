@@ -1,7 +1,10 @@
 "use client";
 
+import { client } from "@/lib/client";
+import { useMutation } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
+import { useUsername } from "@/hooks/use-username";
 
 const formatTimeRemaining = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -15,11 +18,22 @@ const RoomPage = () => {
   const params = useParams();
   const { roomId } = params as { roomId: string };
 
+  const { username } = useUsername();
+
   const [copyStatus, setCopyStatus] = useState<string>("Copy");
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [input, setInput] = useState<string>("");
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { mutate: sendMessage, isPending } = useMutation({
+    mutationFn: async ({ text }: { text: string }) => {
+      await client.messages.post(
+        { sender: username, text },
+        { query: { roomId } }
+      );
+    },
+  });
 
   const copyLink = () => {
     const url = window.location.href;
@@ -90,7 +104,7 @@ const RoomPage = () => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && input.trim()) {
-                  // TODO: Send message logic here
+                  sendMessage({ text: input });
                   inputRef.current?.focus();
                 }
               }}
@@ -102,6 +116,13 @@ const RoomPage = () => {
             />
           </div>
           <button
+            onClick={() => {
+              if (input.trim()) {
+                sendMessage({ text: input });
+                inputRef.current?.focus();
+              }
+            }}
+            disabled={!input.trim() || isPending}
             className="uppearcase bg-zinc-800 text-zinc-400 px-6 
           text-sm font-bold hover:text-zinc-200 transition-all 
           disabled:opacity-50 disabled:cursor-not-allowed
