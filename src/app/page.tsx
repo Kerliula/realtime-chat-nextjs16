@@ -4,10 +4,15 @@ import { client } from "@/lib/client";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useUsername } from "@/hooks/use-username";
+import { useSearchParams } from "next/navigation";
 
 export default function HomePage() {
   const router = useRouter();
   const { username } = useUsername();
+
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
+  const wasDestroyed = searchParams.get("destroyed") === "true";
 
   const { mutate: createRoom } = useMutation({
     mutationFn: async () => {
@@ -22,6 +27,23 @@ export default function HomePage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
+        {wasDestroyed && (
+          <div className="bg-red-900 text-red-100 p-4 rounded-md text-center">
+            The room has been destroyed. Create a new one to start chatting
+            again.
+          </div>
+        )}
+        {error === "room_not_found" && (
+          <div className="bg-red-900 text-red-100 p-4 rounded-md text-center">
+            Room not found. Please check the link or create a new room.
+          </div>
+        )}
+        {error === "room_full" && (
+          <div className="bg-red-900 text-red-100 p-4 rounded-md text-center">
+            The room is full. Please try joining another room or create a new
+            one.
+          </div>
+        )}
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold tracking-tight text-green-500">
             {">"}private_chat
