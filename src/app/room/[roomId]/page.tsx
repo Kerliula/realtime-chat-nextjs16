@@ -3,7 +3,7 @@
 import { client } from "@/lib/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useUsername } from "@/hooks/use-username";
 import { format } from "date-fns";
 import { useRealtime } from "@/lib/realtime-client";
@@ -29,6 +29,21 @@ const RoomPage = () => {
   const [input, setInput] = useState<string>("");
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { data } = useQuery({
+    queryKey: ["ttl", roomId],
+    queryFn: async () => {
+      const res = await client.rooms.getTimeRemaining.get({
+        query: { roomId },
+      });
+      return res.data;
+    },
+    refetchInterval: 1000,
+  });
+
+  useEffect(() => {
+    setTimeRemaining(data?.timeRemaining ?? null);
+  }, [data]);
 
   const { data: messages, refetch } = useQuery({
     queryKey: ["messages", roomId],
